@@ -74,65 +74,69 @@ def create_hierarchical_tree(num_product_families, num_product_offerings, num_mo
 
     return G
     
-if st.toggle('Show BOM') :
-    st.image("Sample_BOM.jpg")
-
-st.title('Creation')
-
-NUM_PRODUCT_FAMILIES = 0
-NUM_PRODUCT_OFFERINGS = 0
-
-NUM_MODULES = 0
-NUM_MODULES_LEVELS = 0
-
-NUM_PARTS = 0
-NUM_PARTS_LEVEL = 0
-
-NUM_PRODUCT_FAMILIES = st.number_input('Number of Product Families', min_value=1, value=1)
-NUM_PRODUCT_OFFERINGS = st.number_input('Number of Product Offerings', min_value=1, value=1)
-
-NUM_MODULES = st.number_input('Number of Maximum Modules', min_value=1, value=1)
-NUM_MODULES_LEVELS = st.number_input('Number of Module Levels', min_value=1, value=1)
-
-NUM_PARTS = st.number_input('Number of Maximum Parts', min_value=1, value=1)
-NUM_PARTS_LEVEL = st.number_input('Number of Parts Levels', min_value=1, value=1)
-
-st.session_state.G = create_hierarchical_tree(NUM_PRODUCT_FAMILIES, NUM_PRODUCT_OFFERINGS, NUM_MODULES, NUM_MODULES_LEVELS, NUM_PARTS, NUM_PARTS_LEVEL)
-
-
-def visualize_graph(G):
-    plt.figure(figsize=(12, 12))
-    pos = nx.spring_layout(G)
-    nx.draw(G, pos, with_labels=True, node_size=700, node_color="skyblue", font_size=8, font_weight="bold")
-    edge_labels = nx.get_edge_attributes(G, 'weight')
-    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
-    st.pyplot(plt)
-
-visualize_graph(st.session_state.G)
-
-graph = st.session_state.G
-try:
-    # Save the graph to GraphML format
-    file_name = "graph.graphml"
-    nx.write_graphml(graph, file_name)
+def main() :
     
-    # Read the saved file as bytes to prepare it for download
-    with open(file_name, 'rb') as f:
-        file_data = f.read()
-    
-    # Streamlit component to download the file
-    # when the button is clicked prevent reloading the page
+    if st.toggle('Show BOM') :
+        st.image("Sample_BOM.jpg")
 
-    st.download_button(
-        label="Download GraphML file",
-        data=file_data,
-        file_name=file_name,
-        mime='application/graphml+xml'
-    )
+    st.title('Creation')
 
-    st.success(f"Graph data saved and ready to download as {file_name}")
+    NUM_PRODUCT_FAMILIES = 0
+    NUM_PRODUCT_OFFERINGS = 0
 
-except Exception as e:
-    st.error(f"An error occurred: {e}")
+    NUM_MODULES = 0
+    NUM_MODULES_LEVELS = 0
+
+    NUM_PARTS = 0
+    NUM_PARTS_LEVEL = 0
+
+    NUM_PRODUCT_FAMILIES = st.number_input('Number of Product Families', min_value=1, value=1)
+    NUM_PRODUCT_OFFERINGS = st.number_input('Number of Product Offerings', min_value=1, value=1)
+
+    NUM_MODULES = st.number_input('Number of Maximum Modules', min_value=1, value=1)
+    NUM_MODULES_LEVELS = st.number_input('Number of Module Levels', min_value=1, value=1)
+
+    NUM_PARTS = st.number_input('Number of Maximum Parts', min_value=1, value=1)
+    NUM_PARTS_LEVEL = st.number_input('Number of Parts Levels', min_value=1, value=1)
+
+    st.session_state.G = create_hierarchical_tree(NUM_PRODUCT_FAMILIES, NUM_PRODUCT_OFFERINGS, NUM_MODULES, NUM_MODULES_LEVELS, NUM_PARTS, NUM_PARTS_LEVEL)
 
 
+    def visualize_graph(G):
+        plt.figure(figsize=(12, 12))
+        pos = nx.spring_layout(G)
+        nx.draw(G, pos, with_labels=True, node_size=700, node_color="skyblue", font_size=8, font_weight="bold")
+        edge_labels = nx.get_edge_attributes(G, 'weight')
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
+        st.pyplot(plt)
+
+    visualize_graph(st.session_state.G)
+
+    graph = st.session_state.G
+    try:
+        # Save the graph to GraphML format
+        file_name = "graph.graphml"
+        nx.write_graphml(graph, file_name)
+        
+        # Read the saved file as bytes to prepare it for download
+        with open(file_name, 'rb') as f:
+            file_data = f.read()
+        
+        # Streamlit component to download the file
+        # when the button is clicked prevent reloading the page
+
+        st.download_button(
+            label="Download GraphML file",
+            data=file_data,
+            file_name=file_name,
+            mime='application/graphml+xml'
+        )
+
+        st.success(f"Graph data saved and ready to download as {file_name}")
+
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
+
+
+if __name__ == "__main__":
+    main()
