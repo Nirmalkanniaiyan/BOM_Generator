@@ -6,6 +6,33 @@ from datetime import datetime, timedelta
 from io import BytesIO
 from dateutil import parser
 from collections import deque, defaultdict
+from memory_profiler import memory_usage
+import functools
+import time
+
+
+def profile(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        mem_before = memory_usage()[0]
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        mem_after = memory_usage()[0]
+        execution_time = end_time - start_time
+        memory_used = mem_after - mem_before
+
+        st.session_state.setdefault("profiling_results", []).append(
+            {
+                "function": func.__name__,
+                "execution_time": execution_time,
+                "memory_used": memory_used,
+            }
+        )
+        return result
+
+    return wrapper
+
 
 def load_graph(uploaded_file):
     try:
@@ -23,6 +50,7 @@ def random_date_and_quantity():
     available_quantity = random.randint(1, 100)
     return manufacturing_date, available_quantity
 
+@profile
 def shortest_path_hops(graph, node1, node2):
     try:
         path = nx.shortest_path(graph, source=node1, target=node2)
@@ -31,6 +59,7 @@ def shortest_path_hops(graph, node1, node2):
     except nx.NetworkXNoPath:
         return None, float('inf')
 
+@profile
 def shortest_path_weights(graph, node1, node2):
     try:
         path = nx.shortest_path(graph, source=node1, target=node2, weight='weight')  
@@ -39,10 +68,12 @@ def shortest_path_weights(graph, node1, node2):
     except nx.NetworkXNoPath:
         return None, float('inf')
 
+@profile
 def are_connected(graph, node1, node2):
     _, num_hops = shortest_path_hops(graph, node1, node2)
     return num_hops > 0
 
+@profile
 def enough_raw_materials(graph, product_node, units_needed):
     # st.write(graph.out_edges(product_node, data=True))
 
@@ -70,6 +101,7 @@ def enough_raw_materials(graph, product_node, units_needed):
     # Start the recursive check from the product node
     return check_parts(product_node, units_needed)
 
+@profile
 def check_expiry(graph, product_node):
     try:
         node_data = graph.nodes[product_node]
@@ -132,7 +164,8 @@ def plot_hierarchy(G, root=None):
     nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels,font_size=20)
     nx.draw_networkx_edges(G, pos, arrowstyle='->', arrowsize=20, edge_color='black')
 
-    plt.show()
+    # plt.show()
+    st.pyplot(plt)
 
 def hierarchy_pos(G, root, width=1., vert_gap=0.2, vert_loc=0, xcenter=0.5):
 
@@ -174,7 +207,7 @@ if uploaded_file is not None:
         # plt = visualize_improved_layout(st.session_state.G)
         plot_hierarchy(G, root="Business Group")
 
-        st.pyplot(plt)
+        # st.pyplot(plt)
 
         options = ["shortest_path_hops", "enough_raw_materials", "check_expiry"]
         option = st.selectbox('Select option', options)
@@ -190,9 +223,14 @@ if uploaded_file is not None:
                 if path:
                     st.write(f"Shortest path between {node1} and {node2}: {path}, Number of hops: {num_hops}")
                     st.write("Subgraph of the shortest path:")
+                    st.write(st.session_state["profiling_results"][-1])
                     visualize_subgraph(G, path)  # Visualize the subgraph of the path
+                    
+
                 else:
                     st.write(f"No path found between {node1} and {node2}")
+
+            
 
         elif option == "enough_raw_materials":
             product_node = st.selectbox("Select the product node", nodes, key='enough_raw_materials_product_node')
@@ -202,6 +240,7 @@ if uploaded_file is not None:
                 enough_materials = enough_raw_materials(G, product_node, units_needed)
                 node_properties = G.nodes[product_node]
                 st.write(f"Product Node Properties: {node_properties}")
+                st.write(st.session_state["profiling_results"][-1])
 
                 if enough_materials:
                     st.write(f"Enough raw materials are available to produce {units_needed} units of product {product_node}.")
@@ -212,6 +251,7 @@ if uploaded_file is not None:
             product_node_expiry = st.selectbox("Select the product node", nodes, key='check_expiry_product_node')
             if st.button('Check Expiry'):
                 expired = check_expiry(G, product_node_expiry)
+                st.write(st.session_state["profiling_results"][-1])
                 if expired:
                     st.write(f"Product {product_node_expiry} is expired.")
                 else:
