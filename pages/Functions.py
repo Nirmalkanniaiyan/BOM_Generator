@@ -222,8 +222,9 @@ if uploaded_file is not None:
                 path, num_hops = shortest_path_hops(G, node1, node2)
                 if path:
                     st.write(f"Shortest path between {node1} and {node2}: {path}, Number of hops: {num_hops}")
-                    st.write("Subgraph of the shortest path:")
                     st.write(st.session_state["profiling_results"][-1])
+                    
+                    st.write("Subgraph of the shortest path:")
                     visualize_subgraph(G, path)  # Visualize the subgraph of the path
                     
 
